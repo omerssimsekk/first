@@ -1,273 +1,289 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
+  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
-  Dimensions,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import CountryCodePicker from '../components/CountryCodePicker';
-import AnimatedBackground from '../components/AnimatedBackground';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { theme } from '../theme/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AuthContext } from '../context/AuthContext';
 
 const RegisterScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
-  const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [selectedCountryCode, setSelectedCountryCode] = useState('+90');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { register } = useContext(AuthContext);
 
-  const handleRegister = () => {
-    if (!name || !surname || !email || !username || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
+  const handleRegister = async () => {
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      // Handle password mismatch
       return;
     }
 
-    // Mock successful registration
-    Alert.alert(
-      'Success',
-      'Registration successful! Please login.',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate('Login')
-        }
-      ]
-    );
+    if (name && email && password) {
+      try {
+        await register(name, email, password);
+      } catch (error) {
+        // Handle registration error
+        console.error(error);
+      }
+    }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <AnimatedBackground />
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Animated.View 
-          entering={FadeIn.duration(1000)}
-          style={styles.formContainer}
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.container}
         >
-          <Animated.Text 
-            entering={FadeInDown.duration(1000).delay(300)}
-            style={styles.title}
-          >
-            Create Account
-          </Animated.Text>
-
-          <Animated.View entering={FadeInDown.duration(1000).delay(400)}>
-            <TextInput
-              style={styles.input}
-              placeholder="Name"
-              value={name}
-              onChangeText={setName}
-              placeholderTextColor="#94A3B8"
-            />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(1000).delay(500)}>
-            <TextInput
-              style={styles.input}
-              placeholder="Surname"
-              value={surname}
-              onChangeText={setSurname}
-              placeholderTextColor="#94A3B8"
-            />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(1000).delay(600)}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor="#94A3B8"
-            />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(1000).delay(700)}>
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              placeholderTextColor="#94A3B8"
-            />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(1000).delay(800)} style={styles.phoneContainer}>
-            <CountryCodePicker
-              selectedValue={selectedCountryCode}
-              onValueChange={(value) => setSelectedCountryCode(value)}
-            />
-            <TextInput
-              style={[styles.input, styles.phoneInput]}
-              placeholder="Phone Number"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              keyboardType="phone-pad"
-              placeholderTextColor="#94A3B8"
-            />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(1000).delay(900)}>
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholderTextColor="#94A3B8"
-            />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(1000).delay(1000)}>
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              placeholderTextColor="#94A3B8"
-            />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(1000).delay(1100)}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleRegister}
+          <ScrollView style={styles.scrollView}>
+            <LinearGradient
+              colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.header}
             >
-              <Text style={styles.buttonText}>Register</Text>
-            </TouchableOpacity>
-          </Animated.View>
+              <View style={styles.logoContainer}>
+                <Ionicons name="restaurant" size={60} color="#FFFFFF" />
+              </View>
+              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.subtitle}>Join our community</Text>
+            </LinearGradient>
 
-          <Animated.View entering={FadeInDown.duration(1000).delay(1200)}>
-            <TouchableOpacity
-              style={styles.loginLink}
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Text style={styles.loginText}>
-                Already have an account? Login here
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </Animated.View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <View style={styles.formContainer}>
+              <View style={styles.inputContainer}>
+                <Ionicons name="person-outline" size={20} color={theme.colors.textSecondary} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Full Name"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Ionicons name="mail-outline" size={20} color={theme.colors.textSecondary} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={20} color={theme.colors.textSecondary} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={theme.colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={20} color={theme.colors.textSecondary} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm Password"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={theme.colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
+                <Text style={styles.registerButtonText}>Sign Up</Text>
+              </TouchableOpacity>
+
+              <View style={styles.dividerContainer}>
+                <View style={styles.divider} />
+                <Text style={styles.dividerText}>OR</Text>
+                <View style={styles.divider} />
+              </View>
+
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => {/* Handle Google Sign Up */}}
+              >
+                <Ionicons name="logo-google" size={20} color={theme.colors.text} />
+                <Text style={styles.socialButtonText}>Continue with Google</Text>
+              </TouchableOpacity>
+
+              <View style={styles.loginContainer}>
+                <Text style={styles.loginText}>Already have an account? </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                  <Text style={styles.loginLink}>Sign In</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  scrollContainer: {
-    flexGrow: 1,
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    height: 280,
     justifyContent: 'center',
-    paddingVertical: 20,
+    alignItems: 'center',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    ...theme.shadows.medium,
   },
-  formContainer: {
-    padding: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    margin: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 5,
-    backdropFilter: 'blur(10px)',
+  logoContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#1a237e',
-    marginBottom: 30,
-    textAlign: 'center',
-    textShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  formContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    height: 56,
+    ...theme.shadows.small,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    fontSize: 16,
-    color: '#1a237e',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  phoneContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  phoneInput: {
     flex: 1,
-    marginLeft: 10,
-    marginBottom: 0,
+    marginLeft: 12,
+    fontSize: 16,
+    color: theme.colors.text,
   },
-  button: {
-    backgroundColor: '#1a237e',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+  eyeIcon: {
+    padding: 4,
   },
-  buttonText: {
+  registerButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.md,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    ...theme.shadows.small,
+  },
+  registerButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    textAlign: 'center',
   },
-  loginLink: {
-    marginTop: 20,
-    padding: 10,
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.border,
+  },
+  dividerText: {
+    color: theme.colors.textSecondary,
+    paddingHorizontal: 16,
+    fontSize: 14,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    height: 56,
+    ...theme.shadows.small,
+  },
+  socialButtonText: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 12,
+  },
+  loginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
   },
   loginText: {
-    color: '#1a237e',
-    fontSize: 15,
-    textAlign: 'center',
-    fontWeight: '500',
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+  },
+  loginLink: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

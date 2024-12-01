@@ -1,74 +1,76 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-
-// Import screens
-import HomeScreen from '../screens/HomeScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import ExploreScreen from '../screens/ExploreScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
-import LocationsScreen from '../screens/LocationsScreen';
-import EventsScreen from '../screens/EventsScreen';
+import InitialLocationScreen from '../screens/InitialLocationScreen';
+import { theme } from '../theme/theme';
 
-const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-const MainTabs = () => {
+const MainNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-
-          if (route.name === 'Home') {
-            iconName = 'home';
-          } else if (route.name === 'Profile') {
-            iconName = 'person';
-          } else if (route.name === 'Locations') {
-            iconName = 'place';
-          } else if (route.name === 'Events') {
-            iconName = 'event';
-          }
-
-          return <Icon name={iconName} size={size} color={color} />;
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopWidth: 0,
+          height: 60,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderTopColor: 'transparent',
         },
-        tabBarActiveTintColor: '#2196F3',
-        tabBarInactiveTintColor: 'gray',
-      })}
+        tabBarItemStyle: {
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
+      }}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen}
+      <Tab.Screen
+        name="Explore"
+        component={ExploreScreen}
         options={{
-          title: 'Home',
-          headerShown: true,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="compass" size={24} color={color} />
+          ),
         }}
       />
-      <Tab.Screen 
-        name="Locations" 
-        component={LocationsScreen}
+      <Tab.Screen
+        name="Events"
+        component={ExploreScreen}
         options={{
-          title: 'Locations',
-          headerShown: true,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar" size={24} color={color} />
+          ),
         }}
       />
-      <Tab.Screen 
-        name="Events" 
-        component={EventsScreen}
+      <Tab.Screen
+        name="Favorites"
+        component={ExploreScreen}
         options={{
-          title: 'Events',
-          headerShown: true,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="heart" size={24} color={color} />
+          ),
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen}
+      <Tab.Screen
+        name="Profile"
+        component={ExploreScreen}
         options={{
-          title: 'Profile',
-          headerShown: true,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={24} color={color} />
+          ),
         }}
       />
     </Tab.Navigator>
@@ -79,43 +81,15 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
         screenOptions={{
-          headerStyle: {
-            backgroundColor: '#964B00',
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.colors.background },
         }}
       >
-        <Stack.Screen
-          name="Main"
-          component={MainTabs}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="ChangePassword"
-          component={ChangePasswordScreen}
-          options={{
-            title: 'Change Password',
-            headerStyle: {
-              backgroundColor: '#2196F3',
-            },
-            headerTintColor: '#fff',
-          }}
-        />
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Register"
-          component={RegisterScreen}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="InitialLocation" component={InitialLocationScreen} />
+        <Stack.Screen name="Main" component={MainNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
   );

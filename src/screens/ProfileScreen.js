@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useLocation } from '../context/LocationContext';
@@ -14,10 +15,27 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
+import { LinearGradient } from 'expo-linear-gradient';
+import { theme } from '../theme/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const ProfileOption = ({ icon, title, subtitle, onPress }) => (
+  <TouchableOpacity style={styles.optionCard} onPress={onPress}>
+    <View style={styles.optionIcon}>
+      <Ionicons name={icon} size={24} color={theme.colors.primary} />
+    </View>
+    <View style={styles.optionContent}>
+      <Text style={styles.optionTitle}>{title}</Text>
+      {subtitle && <Text style={styles.optionSubtitle}>{subtitle}</Text>}
+    </View>
+    <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
+  </TouchableOpacity>
+);
 
 const ProfileScreen = ({ navigation }) => {
   const { userInfo, logout } = useContext(AuthContext);
   const { currentCity, updateCity } = useLocation();
+  const insets = useSafeAreaInsets();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -61,203 +79,199 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const ProfileOption = ({ icon, title, subtitle, onPress }) => (
-    <TouchableOpacity style={styles.optionContainer} onPress={onPress}>
-      <View style={styles.optionIconContainer}>
-        <Ionicons name={icon} size={24} color="#1a237e" />
-      </View>
-      <View style={styles.optionTextContainer}>
-        <Text style={styles.optionTitle}>{title}</Text>
-        {subtitle && <Text style={styles.optionSubtitle}>{subtitle}</Text>}
-      </View>
-      <Ionicons name="chevron-forward" size={24} color="#666" />
-    </TouchableOpacity>
-  );
-
-  const menuItems = [
-    {
-      icon: 'person-outline',
-      title: 'Edit Profile',
-      onPress: () => navigation.navigate('EditProfile'),
-    },
-    {
-      icon: 'lock-closed-outline',
-      title: 'Change Password',
-      onPress: () => navigation.navigate('ChangePassword'),
-    },
-    {
-      icon: 'notifications-outline',
-      title: 'Notifications',
-      onPress: () => navigation.navigate('NotificationSettings'),
-    },
-    {
-      icon: 'settings-outline',
-      title: 'Settings',
-      onPress: () => navigation.navigate('Settings'),
-    },
-  ];
-
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <Ionicons name="person-circle" size={100} color="#007AFF" />
+        <Text style={styles.headerTitle}>Profile</Text>
+        <TouchableOpacity style={styles.settingsButton}>
+          <Ionicons name="settings-outline" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.scrollView}>
+        <LinearGradient
+          colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.profileHeader}
+        >
+          <View style={styles.avatarContainer}>
+            <Ionicons name="person" size={40} color="#FFFFFF" />
+          </View>
+          <Text style={styles.profileName}>{userInfo?.name || 'User'}</Text>
+          <Text style={styles.profileLocation}>{currentCity}</Text>
+        </LinearGradient>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>24</Text>
+            <Text style={styles.statLabel}>Reviews</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>12</Text>
+            <Text style={styles.statLabel}>Favorites</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>8</Text>
+            <Text style={styles.statLabel}>Events</Text>
+          </View>
         </View>
-        <Text style={styles.name}>{userInfo?.name || 'User'}</Text>
-        <Text style={styles.username}>@{userInfo?.username || 'username'}</Text>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Location Settings</Text>
-        <ProfileOption
-          icon="location"
-          title="Current Location"
-          subtitle={currentCity}
-          onPress={() => navigation.navigate('LocationPicker')}
-        />
-      </View>
-
-      <View style={styles.menuContainer}>
-        {menuItems.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.menuItem}
-            onPress={item.onPress}
-          >
-            <View style={styles.menuItemContent}>
-              <Ionicons name={item.icon} size={24} color="#007AFF" />
-              <Text style={styles.menuItemText}>{item.title}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#999" />
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <View style={styles.optionsContainer}>
+          <ProfileOption
+            icon="location"
+            title="Current Location"
+            subtitle={currentCity}
+            onPress={() => navigation.navigate('LocationPicker')}
+          />
+          <ProfileOption
+            icon="person-outline"
+            title="Edit Profile"
+            onPress={() => navigation.navigate('EditProfile')}
+          />
+          <ProfileOption
+            icon="lock-closed-outline"
+            title="Change Password"
+            onPress={() => navigation.navigate('ChangePassword')}
+          />
+          <ProfileOption
+            icon="notifications-outline"
+            title="Notifications"
+            onPress={() => navigation.navigate('NotificationSettings')}
+          />
+          <ProfileOption
+            icon="settings-outline"
+            title="Settings"
+            onPress={() => navigation.navigate('Settings')}
+          />
+          <ProfileOption
+            icon="log-out-outline"
+            title="Logout"
+            onPress={handleLogout}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: theme.colors.surface,
+    ...theme.shadows.small,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  settingsButton: {
+    padding: 8,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  profileHeader: {
+    padding: 24,
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.lg,
+    margin: 16,
+    ...theme.shadows.medium,
   },
   avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
-  name: {
+  profileName: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  username: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 5,
-  },
-  section: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
     fontWeight: '600',
-    color: '#1a237e',
-    marginBottom: 15,
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
-  optionContainer: {
+  profileLocation: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: 16,
+    marginTop: -24,
+    borderRadius: theme.borderRadius.lg,
+    padding: 16,
+    ...theme.shadows.small,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: theme.colors.border,
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  optionsContainer: {
+    padding: 16,
+  },
+  optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    marginBottom: 8,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    padding: 15,
+    backgroundColor: theme.colors.surface,
+    padding: 16,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: 12,
+    ...theme.shadows.small,
   },
-  optionIconContainer: {
+  optionIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: 12,
   },
-  optionTextContainer: {
+  optionContent: {
     flex: 1,
   },
   optionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1a237e',
+    fontWeight: '500',
+    color: theme.colors.text,
+    marginBottom: 2,
   },
   optionSubtitle: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  menuContainer: {
-    backgroundColor: '#fff',
-    marginTop: 20,
-    paddingHorizontal: 15,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  menuItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  menuItemText: {
-    fontSize: 16,
-    marginLeft: 15,
-    color: '#333',
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    marginTop: 20,
-    marginHorizontal: 15,
-    padding: 15,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#FF3B30',
-  },
-  logoutText: {
-    color: '#FF3B30',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 10,
+    color: theme.colors.textSecondary,
   },
 });
 

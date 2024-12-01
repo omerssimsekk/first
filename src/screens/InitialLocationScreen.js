@@ -7,11 +7,14 @@ import {
   ActivityIndicator,
   TextInput,
   FlatList,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { CommonActions } from '@react-navigation/native';
+import { theme } from '../theme/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const InitialLocationScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
@@ -22,7 +25,7 @@ const InitialLocationScreen = ({ navigation }) => {
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'Home' }],
+        routes: [{ name: 'Main' }],
       })
     );
   };
@@ -149,53 +152,78 @@ const InitialLocationScreen = ({ navigation }) => {
 
     return (
       <TouchableOpacity
-        style={styles.searchResultItem}
+        style={styles.resultItem}
         onPress={() => handleSelectLocation(item)}
       >
-        <Ionicons name="location" size={20} color="#fff" />
-        <Text style={styles.searchResultText}>{placeName}</Text>
+        <Ionicons name="location" size={24} color={theme.colors.primary} />
+        <Text style={styles.resultText}>{placeName}</Text>
       </TouchableOpacity>
     );
   };
 
+  const WelcomeSection = () => (
+    <View style={styles.welcomeContainer}>
+      <LinearGradient
+        colors={[theme.colors.primary, theme.colors.accent]}
+        style={styles.welcomeGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Ionicons name="location" size={64} color={theme.colors.text} />
+        <Text style={styles.welcomeTitle}>Choose Your Location</Text>
+        <Text style={styles.welcomeSubtitle}>
+          Find exciting nightlife spots near you
+        </Text>
+      </LinearGradient>
+      
+      <View style={styles.tipContainer}>
+        <Ionicons name="information-circle" size={24} color={theme.colors.primary} />
+        <Text style={styles.tipText}>
+          Search for your city or use your current location
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome!</Text>
-        <Text style={styles.subtitle}>Where would you like to explore?</Text>
-
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search for a city..."
-              placeholderTextColor="#666"
-              value={searchQuery}
-              onChangeText={handleSearchChange}
-            />
-          </View>
-
-          {loading ? (
-            <ActivityIndicator color="#fff" style={styles.loader} />
-          ) : (
-            <FlatList
-              data={searchResults}
-              renderItem={renderSearchResult}
-              keyExtractor={(item, index) => index.toString()}
-              style={styles.searchResults}
-            />
-          )}
-        </View>
-
-        <TouchableOpacity
-          style={styles.currentLocationButton}
-          onPress={getCurrentLocation}
-        >
-          <Ionicons name="locate" size={24} color="#fff" />
-          <Text style={styles.currentLocationText}>Use Current Location</Text>
-        </TouchableOpacity>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={24} color={theme.colors.textSecondary} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Enter your city..."
+          placeholderTextColor={theme.colors.textSecondary}
+          value={searchQuery}
+          onChangeText={(text) => {
+            setSearchQuery(text);
+            searchLocations(text);
+          }}
+        />
       </View>
+
+      {loading ? (
+        <ActivityIndicator size={36} color={theme.colors.primary} style={styles.loading} />
+      ) : searchResults.length > 0 ? (
+        <FlatList
+          data={searchResults}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={renderSearchResult}
+        />
+      ) : (
+        <WelcomeSection />
+      )}
+
+      <TouchableOpacity
+        style={styles.currentLocationButton}
+        onPress={getCurrentLocation}
+      >
+        <View
+          style={styles.gradientButton}
+        >
+          <Ionicons name="location" size={24} color={theme.colors.text} />
+          <Text style={styles.buttonText}>Use Current Location</Text>
+        </View>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -203,79 +231,103 @@ const InitialLocationScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a237e',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 60,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 30,
+    backgroundColor: theme.colors.background,
+    paddingTop: 50,
   },
   searchContainer: {
-    marginBottom: 20,
-  },
-  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    marginBottom: 10,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.md,
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: theme.spacing.sm,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 15,
-    fontSize: 16,
-    color: '#333',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.sm,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    color: theme.colors.text,
   },
-  searchResults: {
-    maxHeight: 200,
-  },
-  searchResultItem: {
+  resultItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    marginVertical: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  searchResultText: {
-    marginLeft: 10,
+  resultText: {
+    marginLeft: theme.spacing.md,
     fontSize: 16,
-    color: '#fff',
+    color: theme.colors.text,
   },
   currentLocationButton: {
+    margin: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+  },
+  gradientButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.primary,
+  },
+  buttonText: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: theme.spacing.sm,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  welcomeContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+  },
+  welcomeGradient: {
+    width: '100%',
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    color: theme.colors.text,
+    fontWeight: 'bold',
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.lg,
+    textAlign: 'center',
+  },
+  tipContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 15,
-    borderRadius: 25,
-    marginTop: 10,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.sm,
+    width: '100%',
   },
-  currentLocationText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 10,
-  },
-  loader: {
-    marginTop: 20,
+  tipText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginLeft: theme.spacing.sm,
+    flex: 1,
   },
 });
 

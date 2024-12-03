@@ -91,24 +91,24 @@ const ExploreScreen = () => {
   const [nearbyEvents, setNearbyEvents] = useState([]);
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar style="dark" />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Explore</Text>
+        <TouchableOpacity style={styles.filterButton}>
+          <Ionicons name="search" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient
-          colors={[theme.colors.gradientStart, theme.colors.gradientMiddle, theme.colors.gradientEnd]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.header, { paddingTop: insets.top + 16 }]}
-        >
-          <View style={styles.headerContent}>
-            <Text style={styles.welcomeText}>Discover the City</Text>
-            <Text style={styles.subtitleText}>Explore food and local experiences</Text>
-          </View>
-        </LinearGradient>
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeText}>Discover the City</Text>
+          <Text style={styles.subtitleText}>Explore food and local experiences</Text>
+        </View>
         
         <View style={styles.categoriesContainer}>
           {categories.map((category) => (
@@ -127,18 +127,25 @@ const ExploreScreen = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.nearbyEventsScrollContent}
           >
-            {nearbyEvents.map((event) => (
-              <NearbyEventCard
-                key={event.id}
-                title={event.title}
-                time={event.time}
-                distance={event.distance}
-              />
-            ))}
+            {nearbyEvents.length === 0 ? (
+              <View style={styles.emptyEventsContainer}>
+                <Ionicons name="calendar-outline" size={48} color={theme.colors.textSecondary} />
+                <Text style={styles.emptyText}>No nearby events</Text>
+              </View>
+            ) : (
+              nearbyEvents.map((event) => (
+                <NearbyEventCard
+                  key={event.id}
+                  title={event.title}
+                  time={event.time}
+                  distance={event.distance}
+                />
+              ))
+            )}
           </ScrollView>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -147,39 +154,44 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  filterButton: {
+    padding: 8,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 16,
+    paddingBottom: 24,
   },
-  header: {
-    width: '100%',
-    paddingHorizontal: 0,
-    paddingBottom: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderBottomLeftRadius: theme.borderRadius.lg,
-    borderBottomRightRadius: theme.borderRadius.lg,
-    ...theme.shadows.medium,
-  },
-  headerContent: {
-    paddingHorizontal: 30,
-    width: '100%',
-    alignItems: 'center',
+  welcomeSection: {
+    padding: 24,
+    backgroundColor: theme.colors.primary,
   },
   welcomeText: {
     fontSize: 28,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 8,
-    textAlign: 'center',
   },
   subtitleText: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
     lineHeight: 24,
   },
   categoriesContainer: {
@@ -266,6 +278,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginLeft: 4,
     opacity: 0.9,
+  },
+  emptyEventsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  emptyText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: theme.colors.textSecondary,
   },
 });
 

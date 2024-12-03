@@ -18,6 +18,7 @@ import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
 const ProfileOption = ({ icon, title, subtitle, onPress }) => (
   <TouchableOpacity style={styles.optionCard} onPress={onPress}>
@@ -81,6 +82,7 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
         <TouchableOpacity style={styles.settingsButton}>
@@ -88,7 +90,10 @@ const ProfileScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <LinearGradient
           colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
           start={{ x: 0, y: 0 }}
@@ -167,19 +172,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: theme.colors.surface,
-    ...theme.shadows.small,
+    paddingVertical: 12,
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: theme.colors.text,
   },
   settingsButton: {
     padding: 8,
-    borderRadius: theme.borderRadius.sm,
-    backgroundColor: theme.colors.background,
   },
   scrollView: {
     flex: 1,

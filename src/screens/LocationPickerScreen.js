@@ -9,41 +9,140 @@ import {
   TextInput,
   FlatList,
   Keyboard,
+  StatusBar,
+  Platform,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import { useLocation } from '../context/LocationContext';
 import { theme } from '../theme/theme';
-import { LinearGradient } from 'expo-linear-gradient';
+import MapView, { Marker } from 'react-native-maps';
 
 const LocationPickerScreen = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
   const [selectedPlace, setSelectedPlace] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [filteredCities, setFilteredCities] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mapRegion, setMapRegion] = useState({
+    latitude: 39.9334,  // Turkey's center
+    longitude: 32.8597,
+    latitudeDelta: 20,
+    longitudeDelta: 20,
+  });
   const navigation = useNavigation();
   const { updateLocation } = useLocation();
 
-  useEffect(() => {
-    loadSavedLocation();
-  }, []);
+  // Turkish cities with postal codes and coordinates
+  const cityData = {
+    'Adana': { postalCode: '01', latitude: 36.9908, longitude: 35.3266 },
+    'Adıyaman': { postalCode: '02', latitude: 37.7648, longitude: 38.2786 },
+    'Afyonkarahisar': { postalCode: '03', latitude: 38.7589, longitude: 30.5431 },
+    'Ağrı': { postalCode: '04', latitude: 39.7167, longitude: 43.0500 },
+    'Amasya': { postalCode: '05', latitude: 40.6667, longitude: 35.8333 },
+    'Ankara': { postalCode: '06', latitude: 39.9208, longitude: 32.8541 },
+    'Antalya': { postalCode: '07', latitude: 36.8969, longitude: 30.7133 },
+    'Artvin': { postalCode: '08', latitude: 41.1833, longitude: 41.8167 },
+    'Aydın': { postalCode: '09', latitude: 37.8500, longitude: 27.8500 },
+    'Balıkesir': { postalCode: '10', latitude: 39.6484, longitude: 27.8851 },
+    'Bilecik': { postalCode: '11', latitude: 40.0500, longitude: 29.9667 },
+    'Bingöl': { postalCode: '12', latitude: 38.8853, longitude: 40.4900 },
+    'Bitlis': { postalCode: '13', latitude: 38.4025, longitude: 42.1167 },
+    'Bolu': { postalCode: '14', latitude: 40.7333, longitude: 31.6167 },
+    'Burdur': { postalCode: '15', latitude: 37.7167, longitude: 30.2833 },
+    'Bursa': { postalCode: '16', latitude: 40.1833, longitude: 29.0667 },
+    'Çanakkale': { postalCode: '17', latitude: 40.1553, longitude: 26.4142 },
+    'Çankırı': { postalCode: '18', latitude: 40.6000, longitude: 33.6167 },
+    'Çorum': { postalCode: '19', latitude: 40.5500, longitude: 34.9500 },
+    'Denizli': { postalCode: '20', latitude: 37.7667, longitude: 29.0857 },
+    'Diyarbakır': { postalCode: '21', latitude: 37.9167, longitude: 40.2167 },
+    'Edirne': { postalCode: '22', latitude: 41.6667, longitude: 26.5667 },
+    'Elazığ': { postalCode: '23', latitude: 38.6667, longitude: 39.2167 },
+    'Erzincan': { postalCode: '24', latitude: 39.7500, longitude: 39.5000 },
+    'Erzurum': { postalCode: '25', latitude: 39.9167, longitude: 41.2667 },
+    'Eskişehir': { postalCode: '26', latitude: 39.7667, longitude: 30.5256 },
+    'Gaziantep': { postalCode: '27', latitude: 37.0667, longitude: 37.3833 },
+    'Giresun': { postalCode: '28', latitude: 40.9167, longitude: 38.3833 },
+    'Gümüşhane': { postalCode: '29', latitude: 40.4600, longitude: 39.4833 },
+    'Hakkari': { postalCode: '30', latitude: 37.5833, longitude: 43.7333 },
+    'Hatay': { postalCode: '31', latitude: 36.4074, longitude: 36.3499 },
+    'Isparta': { postalCode: '32', latitude: 37.7667, longitude: 30.5556 },
+    'Mersin': { postalCode: '33', latitude: 36.8000, longitude: 34.6333 },
+    'İstanbul': { postalCode: '34', latitude: 41.0082, longitude: 28.9784 },
+    'İzmir': { postalCode: '35', latitude: 38.4192, longitude: 27.1287 },
+    'Kars': { postalCode: '36', latitude: 40.6167, longitude: 43.1000 },
+    'Kastamonu': { postalCode: '37', latitude: 41.3881, longitude: 33.7828 },
+    'Kayseri': { postalCode: '38', latitude: 38.7333, longitude: 35.4833 },
+    'Kırklareli': { postalCode: '39', latitude: 41.7333, longitude: 27.2167 },
+    'Kırşehir': { postalCode: '40', latitude: 39.1500, longitude: 34.1667 },
+    'Kocaeli': { postalCode: '41', latitude: 40.7667, longitude: 29.9167 },
+    'Konya': { postalCode: '42', latitude: 37.8667, longitude: 32.4833 },
+    'Kütahya': { postalCode: '43', latitude: 39.4167, longitude: 29.9833 },
+    'Malatya': { postalCode: '44', latitude: 38.3553, longitude: 38.3161 },
+    'Manisa': { postalCode: '45', latitude: 38.6167, longitude: 27.4167 },
+    'Kahramanmaraş': { postalCode: '46', latitude: 37.5833, longitude: 36.9333 },
+    'Mardin': { postalCode: '47', latitude: 37.3167, longitude: 40.7333 },
+    'Muğla': { postalCode: '48', latitude: 37.2167, longitude: 28.3667 },
+    'Muş': { postalCode: '49', latitude: 38.7500, longitude: 41.5000 },
+    'Nevşehir': { postalCode: '50', latitude: 38.6333, longitude: 34.7167 },
+    'Niğde': { postalCode: '51', latitude: 37.9667, longitude: 34.6833 },
+    'Ordu': { postalCode: '52', latitude: 40.9833, longitude: 37.8833 },
+    'Rize': { postalCode: '53', latitude: 41.0200, longitude: 40.5236 },
+    'Sakarya': { postalCode: '54', latitude: 40.7667, longitude: 30.4167 },
+    'Samsun': { postalCode: '55', latitude: 41.2867, longitude: 36.3300 },
+    'Siirt': { postalCode: '56', latitude: 37.9333, longitude: 41.9500 },
+    'Sinop': { postalCode: '57', latitude: 42.0333, longitude: 35.1500 },
+    'Sivas': { postalCode: '58', latitude: 39.7500, longitude: 37.0167 },
+    'Tekirdağ': { postalCode: '59', latitude: 40.9833, longitude: 27.5167 },
+    'Tokat': { postalCode: '60', latitude: 40.3167, longitude: 36.5500 },
+    'Trabzon': { postalCode: '61', latitude: 41.0082, longitude: 39.7167 },
+    'Tunceli': { postalCode: '62', latitude: 39.1500, longitude: 39.5500 },
+    'Şanlıurfa': { postalCode: '63', latitude: 37.1667, longitude: 38.7833 },
+    'Uşak': { postalCode: '64', latitude: 38.6833, longitude: 29.4167 },
+    'Van': { postalCode: '65', latitude: 38.5000, longitude: 43.3833 },
+    'Yozgat': { postalCode: '66', latitude: 39.8167, longitude: 34.8167 },
+    'Zonguldak': { postalCode: '67', latitude: 41.4500, longitude: 31.8167 },
+    'Aksaray': { postalCode: '68', latitude: 38.3667, longitude: 34.0667 },
+    'Bayburt': { postalCode: '69', latitude: 40.2600, longitude: 40.2333 },
+    'Karaman': { postalCode: '70', latitude: 37.1833, longitude: 33.2167 },
+    'Kırıkkale': { postalCode: '71', latitude: 39.8500, longitude: 33.5167 },
+    'Batman': { postalCode: '72', latitude: 37.8833, longitude: 41.1333 },
+    'Şırnak': { postalCode: '73', latitude: 37.4167, longitude: 42.4667 },
+    'Bartın': { postalCode: '74', latitude: 41.6367, longitude: 32.3333 },
+    'Ardahan': { postalCode: '75', latitude: 41.1167, longitude: 42.7000 },
+    'Iğdır': { postalCode: '76', latitude: 39.9167, longitude: 44.0333 },
+    'Yalova': { postalCode: '77', latitude: 40.6500, longitude: 29.2667 },
+    'Karabük': { postalCode: '78', latitude: 41.2000, longitude: 32.6333 },
+    'Kilis': { postalCode: '79', latitude: 36.7167, longitude: 37.1167 },
+    'Osmaniye': { postalCode: '80', latitude: 37.0667, longitude: 36.2500 },
+    'Düzce': { postalCode: '81', latitude: 40.8333, longitude: 31.1667 }
+  };
+
+  const turkishCities = Object.entries(cityData)
+    .sort(([, a], [, b]) => parseInt(a.postalCode) - parseInt(b.postalCode))
+    .map(([city]) => city);
 
   useEffect(() => {
-    const delaySearch = setTimeout(() => {
-      if (searchQuery) {
-        searchLocations(searchQuery);
-      } else {
-        setSearchResults([]);
+    const initializeLocation = async () => {
+      setFilteredCities(turkishCities);
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Denied', 'Location permission is required');
+          setLoading(false);
+          return;
+        }
+        loadSavedLocation();
+      } catch (error) {
+        console.error('Error initializing location:', error);
+        setLoading(false);
       }
-    }, 500);
+    };
 
-    return () => clearTimeout(delaySearch);
-  }, [searchQuery]);
+    initializeLocation();
+  }, []);
 
   const loadSavedLocation = async () => {
     try {
@@ -53,300 +152,295 @@ const LocationPickerScreen = () => {
         setSelectedLocation(location);
         if (location.placeInfo) {
           setSelectedPlace(location.placeInfo);
-        } else {
-          const placeInfo = await Location.reverseGeocodeAsync({
-            latitude: location.latitude,
-            longitude: location.longitude,
-          });
-          if (placeInfo[0]) {
-            setSelectedPlace(placeInfo[0]);
-          }
         }
+        setMapRegion({
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 0.5,
+          longitudeDelta: 0.5,
+        });
       }
     } catch (error) {
-      console.error('Error loading location:', error);
+      console.error('Error loading saved location:', error);
+      Alert.alert('Error', 'Failed to load saved location');
     } finally {
       setLoading(false);
     }
   };
 
-  const searchLocations = async (query) => {
-    if (query.length < 2) {
-      setSearchResults([]);
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    if (!text.trim()) {
+      setFilteredCities(turkishCities);
       return;
     }
     
-    setIsSearching(true);
-    try {
-      let results = [];
-      const searchQueries = [
-        query,
-        `${query}, Turkey`,
-        `${query} Province, Turkey`,
-        `${query} City, Turkey`,
-        `${query} Turkey`
-      ];
-
-      for (const searchQuery of searchQueries) {
-        if (results.length === 0) {
-          const queryResults = await Location.geocodeAsync(searchQuery);
-          results = [...results, ...queryResults];
-        }
-      }
-
-      const detailedResults = await Promise.all(
-        results.map(async (result) => {
-          try {
-            const placeInfo = await Location.reverseGeocodeAsync({
-              latitude: result.latitude,
-              longitude: result.longitude,
-            });
-            return {
-              ...result,
-              placeInfo: placeInfo[0],
-            };
-          } catch (error) {
-            console.error('Error getting place info:', error);
-            return null;
-          }
-        })
-      );
-
-      // Filter out null results and duplicates
-      const uniqueResults = detailedResults
-        .filter(result => result !== null)
-        .filter((result, index, self) =>
-          index === self.findIndex((r) => (
-            r.latitude === result.latitude && r.longitude === result.longitude
-          ))
-        )
-        .map(result => ({
-          ...result,
-          displayName: formatPlaceName(result.placeInfo)
-        }));
-
-      setSearchResults(uniqueResults);
-    } catch (error) {
-      console.error('Error searching locations:', error);
-      Alert.alert('Error', 'Failed to search locations. Please try again.');
-    } finally {
-      setIsSearching(false);
-    }
+    const normalizedQuery = text.toLowerCase().replace(/i/g, 'İ').replace(/ı/g, 'I');
+    const filtered = turkishCities.filter(city => {
+      const normalizedCity = city.toLowerCase().replace(/i/g, 'İ').replace(/ı/g, 'I');
+      return normalizedCity.includes(normalizedQuery);
+    });
+    setFilteredCities(filtered);
   };
 
-  const formatPlaceName = (placeInfo) => {
-    if (!placeInfo) return '';
-    const parts = [];
-    
-    if (placeInfo.name) parts.push(placeInfo.name);
-    if (placeInfo.district && !parts.includes(placeInfo.district)) parts.push(placeInfo.district);
-    if (placeInfo.city && !parts.includes(placeInfo.city)) parts.push(placeInfo.city);
-    if (placeInfo.region && !parts.includes(placeInfo.region)) parts.push(placeInfo.region);
-    
-    return parts.join(', ');
-  };
-
-  const handleLocationSelect = async (location) => {
+  const handleCitySelect = async (city) => {
     try {
-      const { latitude, longitude, placeInfo } = location;
-      const newLocation = {
+      setLoading(true);
+      
+      // Use hardcoded coordinates
+      const { latitude, longitude, postalCode } = cityData[city];
+      
+      const locationData = {
         latitude,
         longitude,
-        placeInfo,
-        displayName: formatPlaceName(placeInfo)
+        placeInfo: { city, postalCode },
+        city
       };
-      
-      // Save to AsyncStorage
-      await AsyncStorage.setItem('userLocation', JSON.stringify(newLocation));
-      
-      // Update local state
-      setSelectedLocation(newLocation);
-      setSelectedPlace(placeInfo);
-      setSearchQuery('');
-      setSearchResults([]);
-      Keyboard.dismiss();
 
-      // Update location context and wait for it to complete
-      await updateLocation(newLocation);
-      
-      // Navigate back
-      navigation.goBack();
+      // Update all states
+      setSelectedLocation(locationData);
+      setSelectedPlace({ city, postalCode });
+      setMapRegion({
+        latitude,
+        longitude,
+        latitudeDelta: 0.5,
+        longitudeDelta: 0.5,
+      });
+
+      // Save to storage and update context
+      await AsyncStorage.setItem('userLocation', JSON.stringify(locationData));
+      updateLocation(locationData);
     } catch (error) {
-      console.error('Error saving location:', error);
-      Alert.alert('Error', 'Failed to save location. Please try again.');
+      console.error('Error selecting city:', error);
+      Alert.alert('Error', 'Could not process the selected city');
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) {
+  const handleConfirmLocation = async () => {
+    if (!selectedLocation) {
+      Alert.alert('Error', 'Please select a city first');
+      return;
+    }
+
+    try {
+      await updateLocation(selectedLocation);
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error confirming location:', error);
+      Alert.alert('Error', 'Could not save the selected location');
+    }
+  };
+
+  if (loading && !searchQuery) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <View style={[styles.safeContainer, styles.centerContent]}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search for a location..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor={theme.colors.textSecondary}
-            autoFocus={true}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity 
-              onPress={() => {
-                setSearchQuery('');
-                setSearchResults([]);
-              }}
-            >
-              <Ionicons name="close-circle" size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      {searchResults.length > 0 && (
-        <FlatList
-          data={searchResults}
-          keyExtractor={(item, index) => `${item.latitude}-${item.longitude}-${index}`}
-          style={styles.searchResults}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.resultItem}
-              onPress={() => handleLocationSelect(item)}
-            >
-              <LinearGradient
-                colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.resultGradient}
+    <View style={styles.safeContainer}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <View style={styles.container}>
+        <Text style={styles.headerTitle}>Choose Your City</Text>
+        
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <Ionicons name="search" size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search city..."
+              value={searchQuery}
+              onChangeText={handleSearch}
+              placeholderTextColor={theme.colors.textSecondary}
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity 
+                style={styles.clearButton}
+                onPress={() => {
+                  setSearchQuery('');
+                  setFilteredCities(turkishCities);
+                }}
               >
-                <View style={styles.resultContent}>
-                  <Text style={styles.resultText}>{item.displayName}</Text>
-                  <Ionicons name="location" size={20} color="#FFFFFF" />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          )}
-        />
-      )}
-
-      {isSearching && (
-        <View style={styles.searchingIndicator}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-          <Text style={styles.searchingText}>Searching...</Text>
+                <Ionicons name="close-circle" size={20} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      )}
 
-      <MapView
-        style={styles.map}
-        region={{
-          latitude: selectedLocation?.latitude || 41.0082,
-          longitude: selectedLocation?.longitude || 28.9784,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
-      >
+        <View style={styles.contentContainer}>
+          <View style={styles.listContainer}>
+            <FlatList
+              data={filteredCities}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.cityItem,
+                    selectedLocation?.city === item && styles.selectedCityItem
+                  ]}
+                  onPress={() => handleCitySelect(item)}
+                >
+                  <Text style={styles.postalCode}>{cityData[item].postalCode}</Text>
+                  <Text style={[
+                    styles.cityText,
+                    selectedLocation?.city === item && styles.selectedCityText
+                  ]}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              style={styles.citiesList}
+              keyboardShouldPersistTaps="handled"
+            />
+          </View>
+
+          <View style={styles.mapContainer}>
+            {loading ? (
+              <View style={[styles.map, styles.centerContent]}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+              </View>
+            ) : (
+              <MapView
+                style={styles.map}
+                region={mapRegion}
+              >
+                {selectedLocation && (
+                  <Marker
+                    coordinate={{
+                      latitude: selectedLocation.latitude,
+                      longitude: selectedLocation.longitude,
+                    }}
+                  />
+                )}
+              </MapView>
+            )}
+          </View>
+        </View>
+
         {selectedLocation && (
-          <Marker
-            coordinate={{
-              latitude: selectedLocation.latitude,
-              longitude: selectedLocation.longitude,
-            }}
-          />
+          <TouchableOpacity 
+            style={styles.confirmButton}
+            onPress={handleConfirmLocation}
+          >
+            <Text style={styles.confirmButtonText}>Confirm Location</Text>
+          </TouchableOpacity>
         )}
-      </MapView>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginVertical: 16,
   },
   searchContainer: {
-    position: 'absolute',
-    top: 40,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  searchBar: {
+  searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.surface,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    borderRadius: theme.borderRadius.md,
     height: 48,
-    ...theme.shadows.medium,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
+    fontSize: 16,
+    color: theme.colors.text,
+    height: '100%',
+  },
+  clearButton: {
+    padding: 4,
+  },
+  citiesList: {
+    flex: 1,
+  },
+  cityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  selectedCityItem: {
+    backgroundColor: theme.colors.primaryLight,
+  },
+  postalCode: {
+    width: 30,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: 'bold',
+  },
+  cityText: {
     marginLeft: 8,
     fontSize: 16,
     color: theme.colors.text,
   },
-  searchResults: {
-    position: 'absolute',
-    top: 100,
-    left: 16,
-    right: 16,
-    zIndex: 1,
-    maxHeight: '50%',
+  selectedCityText: {
+    color: theme.colors.primary,
+    fontWeight: 'bold',
   },
-  resultItem: {
-    marginBottom: 8,
-    borderRadius: theme.borderRadius.md,
-    overflow: 'hidden',
-    ...theme.shadows.small,
-  },
-  resultGradient: {
-    borderRadius: theme.borderRadius.md,
-  },
-  resultContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  confirmButton: {
+    backgroundColor: theme.colors.primary,
     padding: 16,
+    margin: 16,
+    borderRadius: 8,
+    alignItems: 'center',
   },
-  resultText: {
-    flex: 1,
+  confirmButtonText: {
+    color: theme.colors.white,
     fontSize: 16,
-    color: '#FFFFFF',
-    marginRight: 8,
+    fontWeight: 'bold',
+  },
+  contentContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  listContainer: {
+    flex: 1,
+    maxWidth: '40%',
+    borderRightWidth: 1,
+    borderRightColor: theme.colors.border,
+  },
+  mapContainer: {
+    flex: 1.5,
   },
   map: {
     flex: 1,
   },
-  searchingIndicator: {
-    position: 'absolute',
-    top: 100,
-    left: 16,
-    right: 16,
-    zIndex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+  centerContent: {
     justifyContent: 'center',
-    backgroundColor: theme.colors.surface,
-    padding: 8,
-    borderRadius: theme.borderRadius.md,
-    ...theme.shadows.small,
-  },
-  searchingText: {
-    marginLeft: 8,
-    color: theme.colors.textSecondary,
+    alignItems: 'center',
   },
 });
 

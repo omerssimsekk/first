@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Beer Mug -->
+  <path d="M50 60 h80 q20 0 20 20 v80 q0 20 -20 20 h-80 q-20 0 -20 -20 v-80 q0 -20 20 -20" 
+        fill="#FFD700" stroke="#964B00" stroke-width="4"/>
+  
+  <!-- Beer Foam -->
+  <path d="M50 60 q10 -10 20 0 t20 0 t20 0 t20 0" 
+        fill="white" stroke="#964B00" stroke-width="4"/>
+  
+  <!-- Handle -->
+  <path d="M130 90 q30 0 30 30 q0 20 -30 20" 
+        fill="none" stroke="#964B00" stroke-width="4"/>
+  
+  <!-- Beer Bubbles -->
+  <circle cx="70" cy="100" r="4" fill="white"/>
+  <circle cx="90" cy="110" r="4" fill="white"/>
+  <circle cx="110" cy="95" r="4" fill="white"/>
+  
+  <!-- Text -->
+  <text x="100" y="170" font-family="Arial" font-size="24" font-weight="bold" 
+        text-anchor="middle" fill="#964B00">Beer Buddy</text>
+</svg>

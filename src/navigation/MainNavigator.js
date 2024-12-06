@@ -1,69 +1,119 @@
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import LocationsScreen from '../screens/LocationsScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import InitialLocationScreen from '../screens/InitialLocationScreen';
-import LocationPickerScreen from '../screens/LocationPickerScreen';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import ExploreScreen from '../screens/ExploreScreen';
+import BarScreen from '../screens/BarScreen';
+import RestaurantScreen from '../screens/RestaurantScreen';
+import CafeScreen from '../screens/CafeScreen';
+import ClubScreen from '../screens/ClubScreen';
+import MeyhaneScreen from '../screens/MeyhaneScreen';
+import LocalFoodScreen from '../screens/LocalFoodScreen';
 import { theme } from '../theme/theme';
 
-const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-const TabNavigator = () => {
+const ExploreStack = () => {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-
-          if (route.name === 'Locations') {
-            iconName = focused ? 'map' : 'map-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.text,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
-        }
-      })}
+    <Stack.Navigator
+      initialRouteName="ExploreHome"
+      screenOptions={{
+        headerShown: false,
+        presentation: 'modal',
+        animation: 'slide_from_right',
+        gestureEnabled: true,
+      }}
     >
-      <Tab.Screen 
-        name="Locations" 
-        component={LocationsScreen}
+      <Stack.Screen name="ExploreHome" component={ExploreScreen} />
+      <Stack.Screen 
+        name="Bar" 
+        component={BarScreen}
         options={{
-          headerShown: false,
+          gestureEnabled: true,
+          animation: 'slide_from_right'
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen}
+      <Stack.Screen 
+        name="Restaurant" 
+        component={RestaurantScreen}
         options={{
-          headerShown: false,
+          gestureEnabled: true,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen 
+        name="Cafe" 
+        component={CafeScreen}
+        options={{
+          gestureEnabled: true,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen 
+        name="Club" 
+        component={ClubScreen}
+        options={{
+          gestureEnabled: true,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen 
+        name="Meyhane" 
+        component={MeyhaneScreen}
+        options={{
+          gestureEnabled: true,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen 
+        name="LocalFood" 
+        component={LocalFoodScreen}
+        options={{
+          gestureEnabled: true,
+          animation: 'slide_from_right'
+        }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+const MainNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopWidth: 0,
+          height: 60,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderTopColor: 'transparent',
+        },
+        tabBarItemStyle: {
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
+      }}
+    >
+      <Tab.Screen
+        name="Explore"
+        component={ExploreStack}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="compass" size={24} color={color} />
+          ),
         }}
       />
     </Tab.Navigator>
   );
 };
 
-const MainNavigator = () => {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Stack.Screen name="InitialLocation" component={InitialLocationScreen} />
-      <Stack.Screen name="LocationPicker" component={LocationPickerScreen} />
-      <Stack.Screen name="MainTabs" component={TabNavigator} />
-    </Stack.Navigator>
-  );
-};
-
-export default MainNavigator; 
+export default MainNavigator;

@@ -9,10 +9,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  Alert,
 } from 'react-native';
 import { theme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { CATEGORIES } from '../constants/categories';
+import * as ImagePicker from 'expo-image-picker';
 
 const GetInfoModal = ({ visible, onClose, onSave, initialValues }) => {
   const [locationName, setLocationName] = React.useState('');
@@ -26,6 +29,7 @@ const GetInfoModal = ({ visible, onClose, onSave, initialValues }) => {
     close: '',
   });
   const [musicTypes, setMusicTypes] = React.useState([]);
+  const [image, setImage] = React.useState(null);
 
   const MUSIC_TYPES = [
     { id: 'live', label: 'Live Music' },
@@ -35,11 +39,56 @@ const GetInfoModal = ({ visible, onClose, onSave, initialValues }) => {
     { id: 'pop', label: 'Pop' },
   ];
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant camera roll permissions to add images');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const imageBase64 = result.assets[0].base64;
+        console.log('\n=== Image Picked ===');
+        console.log('Image size:', imageBase64?.length || 'no base64');
+        
+        if (imageBase64) {
+          setImage(imageBase64);
+          console.log('Image set to state successfully');
+        } else {
+          console.log('No base64 data in picked image');
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
   const handleSave = () => {
     if (!locationName.trim()) {
       return;
     }
-    onSave({ 
+
+    console.log('\n=== Saving Location ===');
+    console.log('Image in state:', image ? 'exists' : 'not found');
+    
+    if (image) {
+      console.log('Image data length:', image.length);
+      console.log('Image data type:', typeof image);
+      console.log('Image starts with:', image.substring(0, 20));
+    }
+
+    const locationData = {
       name: locationName, 
       note: locationNote,
       category: selectedCategory,
@@ -48,7 +97,13 @@ const GetInfoModal = ({ visible, onClose, onSave, initialValues }) => {
       instagram: instagramUsername.trim(),
       operatingHours: operatingHours.open || operatingHours.close ? operatingHours : undefined,
       musicTypes: selectedCategory === 'bar' ? musicTypes : undefined,
-    });
+      image: image ? `data:image/jpeg;base64,${image}` : null,
+    };
+
+    console.log('Location data keys:', Object.keys(locationData));
+    console.log('Image included in data:', !!locationData.image);
+    
+    onSave(locationData);
     setLocationName('');
     setLocationNote('');
     setSelectedCategory(null);
@@ -57,6 +112,7 @@ const GetInfoModal = ({ visible, onClose, onSave, initialValues }) => {
     setInstagramUsername('');
     setOperatingHours({ open: '', close: '' });
     setMusicTypes([]);
+    setImage(null);
   };
 
   React.useEffect(() => {
@@ -74,6 +130,7 @@ const GetInfoModal = ({ visible, onClose, onSave, initialValues }) => {
         setInstagramUsername(initialValues.instagram || '');
         setOperatingHours(initialValues.operatingHours || { open: '', close: '' });
         setMusicTypes(initialValues.musicTypes || []);
+        setImage(initialValues.image ? initialValues.image.split(',')[1] : null);
       } else {
         setLocationName('');
         setLocationNote('');
@@ -83,6 +140,7 @@ const GetInfoModal = ({ visible, onClose, onSave, initialValues }) => {
         setInstagramUsername('');
         setOperatingHours({ open: '', close: '' });
         setMusicTypes([]);
+        setImage(null);
       }
     }
   }, [visible, initialValues]);
@@ -287,6 +345,26 @@ const GetInfoModal = ({ visible, onClose, onSave, initialValues }) => {
                   numberOfLines={4}
                   textAlignVertical="top"
                 />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Image</Text>
+                <TouchableOpacity 
+                  style={styles.imagePickerButton} 
+                  onPress={pickImage}
+                >
+                  {image ? (
+                    <Image
+                      source={{ uri: `data:image/jpeg;base64,${image}` }}
+                      style={styles.previewImage}
+                    />
+                  ) : (
+                    <View style={styles.imagePlaceholder}>
+                      <Ionicons name="camera" size={24} color={theme.colors.text} />
+                      <Text style={styles.imagePlaceholderText}>Add Image</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
               </View>
             </View>
           </ScrollView>
@@ -517,6 +595,30 @@ const styles = StyleSheet.create({
   },
   musicTypeTextActive: {
     color: '#FFFFFF',
+  },
+  imagePickerButton: {
+    width: '100%',
+    height: 200,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    color: theme.colors.text,
+    marginTop: 8,
+    fontSize: 14,
   },
 });
 

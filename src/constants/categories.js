@@ -29,10 +29,10 @@ export const CATEGORIES = {
     icon: 'restaurant',
     color: '#FFFFFF'
   },
-  patisserie: { 
-    id: 'patisserie',
-    name: 'Patisserie',
-    icon: 'ice-cream',
-    color: '#FF69B4'
+  localFood: { 
+    id: 'localFood',
+    name: 'Local Food',
+    icon: 'storefront-outline',
+    color: '#4CAF50'
   }
 }; 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,30 +8,56 @@ import {
   Dimensions,
   SafeAreaView,
   Image,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { CATEGORIES } from '../constants/categories';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
 
 const { width } = Dimensions.get('window');
 
-const CategoryCard = ({ title, icon }) => (
-  <TouchableOpacity style={styles.categoryCard}>
-    <LinearGradient
-      colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.cardGradient}
+const CategoryCard = ({ title, icon, onPress }) => {
+  const [isPressed, setIsPressed] = useState(false);
+
+  const handlePress = () => {
+    if (isPressed) return; // Prevent multiple presses
+    
+    setIsPressed(true);
+    console.log('Category pressed:', title);
+    onPress();
+    
+    // Reset after a short delay
+    setTimeout(() => {
+      setIsPressed(false);
+    }, 1000); // 1 second cooldown
+  };
+  
+  return (
+    <TouchableOpacity 
+      style={styles.categoryCard} 
+      onPress={handlePress}
+      disabled={isPressed}
     >
-      <View style={styles.cardIconContainer}>
-        <Ionicons name={icon} size={28} color="#FFFFFF" />
-      </View>
-      <Text style={styles.cardTitle}>{title}</Text>
-    </LinearGradient>
-  </TouchableOpacity>
-);
+      <LinearGradient
+        colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardGradient}
+      >
+        <View style={styles.cardIconContainer}>
+          <Ionicons name={icon} size={28} color="#FFFFFF" />
+        </View>
+        <Text style={styles.cardTitle}>{title}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+};
 
 const NearbyEventCard = ({ title, time, distance, image }) => (
   <TouchableOpacity style={styles.nearbyEventCard}>
@@ -55,18 +81,179 @@ const NearbyEventCard = ({ title, time, distance, image }) => (
   </TouchableOpacity>
 );
 
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
+  return distance.toFixed(1); // Return distance with 1 decimal place
+};
+
+const NearbyLocationCard = ({ location, userLocation }) => {
+  const [distance, setDistance] = useState(null);
+
+  useEffect(() => {
+    const updateDistance = () => {
+      if (userLocation && location.latitude && location.longitude) {
+        const calculatedDistance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          location.latitude,
+          location.longitude
+        );
+        setDistance(calculatedDistance);
+      }
+    };
+
+    // Update immediately when userLocation changes
+    updateDistance();
+
+    // Set up interval to update every 30 seconds
+    const intervalId = setInterval(updateDistance, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [userLocation, location]);
+
+  return (
+    <TouchableOpacity style={styles.nearbyLocationCard}>
+      <View style={styles.nearbyImageContainer}>
+        {location.image ? (
+          <Image 
+            source={{ uri: location.image }} 
+            style={styles.nearbyImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.nearbyPlaceholder}>
+            <Ionicons 
+              name={location.category === 'bar' ? 'beer-outline' : 
+                    location.category === 'restaurant' ? 'restaurant-outline' :
+                    location.category === 'coffee' ? 'cafe-outline' :
+                    location.category === 'club' ? 'musical-notes-outline' :
+                    'image-outline'} 
+              size={32} 
+              color="#666" 
+            />
+          </View>
+        )}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.8)']}
+          style={styles.nearbyGradient}
+        >
+          <Text style={styles.nearbyName}>{location.name}</Text>
+          <View style={styles.nearbyDetails}>
+            <Ionicons name="location-outline" size={14} color="#fff" />
+            <Text style={styles.nearbyDistance}>
+              {distance ? `${distance} km away` : 'Calculating...'}
+            </Text>
+          </View>
+        </LinearGradient>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
 const ExploreScreen = () => {
   const insets = useSafeAreaInsets();
-  const [categories, setCategories] = useState([
-    { id: '1', title: 'Restaurants', icon: 'restaurant-outline' },
-    { id: '2', title: 'Cafes', icon: 'cafe-outline' },
-    { id: '3', title: 'Nightlife', icon: 'wine-outline' },
-    { id: '4', title: 'Pubs & Bars', icon: 'beer-outline' },
-    { id: '5', title: 'Activities', icon: 'bicycle-outline' },
-    { id: '6', title: 'Street Food', icon: 'fast-food-outline' },
+  const navigation = useNavigation();
+  
+  const [categories] = useState([
+    { id: 'restaurant', title: 'Restaurant', icon: 'restaurant' },
+    { id: 'coffee', title: 'Cafe', icon: 'cafe' },
+    { id: 'bar', title: 'Bar', icon: 'beer' },
+    { id: 'club', title: 'Club', icon: 'musical-notes' },
+    { id: 'meyhane', title: 'Meyhane', icon: 'restaurant' },
+    { id: 'localFood', title: 'LocalFood', icon: 'storefront-outline' },
   ]);
   
-  const [nearbyEvents] = useState([]);
+  const [nearbyLocations, setNearbyLocations] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Screen focused - refreshing data and location...');
+      
+      const loadData = async () => {
+        try {
+          // Get fresh user location
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status !== 'granted') {
+            console.log('Location permission denied');
+            return;
+          }
+
+          const position = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High
+          });
+          
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          
+          // Load nearby locations
+          const savedMarkers = await AsyncStorage.getItem('@saved_markers');
+          if (savedMarkers) {
+            const allLocations = JSON.parse(savedMarkers);
+            setNearbyLocations(allLocations);
+            console.log('Nearby locations refreshed:', allLocations.length);
+          } else {
+            setNearbyLocations([]);
+            console.log('No locations found');
+          }
+        } catch (error) {
+          console.error('Error loading nearby locations:', error);
+          setNearbyLocations([]);
+        }
+      };
+
+      loadData();
+    }, [])
+  );
+
+  // Sort locations by distance when user location changes
+  const sortedNearbyLocations = React.useMemo(() => {
+    if (!userLocation || !nearbyLocations.length) return nearbyLocations;
+
+    return [...nearbyLocations].sort((a, b) => {
+      const distanceA = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        a.latitude,
+        a.longitude
+      );
+      const distanceB = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        b.latitude,
+        b.longitude
+      );
+      return distanceA - distanceB;
+    });
+  }, [nearbyLocations, userLocation]);
+
+  const handleCategoryPress = (category) => {
+    try {
+      const screenName = category.id === 'coffee' ? 'Cafe' : 
+                        category.id.charAt(0).toUpperCase() + category.id.slice(1);
+      navigation.navigate(screenName);
+      
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Only show alert if navigation fails
+      Alert.alert(
+        'Navigation Error',
+        'Unable to open this category at the moment.',
+        [{ text: 'OK' }],
+        { cancelable: false }
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -95,12 +282,13 @@ const ExploreScreen = () => {
                   key={category.id}
                   title={category.title}
                   icon={category.icon}
+                  onPress={() => handleCategoryPress(category)}
                 />
               ))}
             </View>
           </View>
 
-          <View style={styles.nearbyEventsSection}>
+          <View style={styles.nearbySection}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Near You</Text>
               <TouchableOpacity>
@@ -110,15 +298,13 @@ const ExploreScreen = () => {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.nearbyEventsScrollContent}
+              contentContainerStyle={styles.nearbyScrollContent}
             >
-              {nearbyEvents.map((event) => (
-                <NearbyEventCard
-                  key={event.id}
-                  title={event.title}
-                  time={event.time}
-                  distance={event.distance}
-                  image={event.image}
+              {sortedNearbyLocations.map((location) => (
+                <NearbyLocationCard 
+                  key={location.id} 
+                  location={location}
+                  userLocation={userLocation}
                 />
               ))}
             </ScrollView>
@@ -222,68 +408,57 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#f3f4f6',
   },
-  nearbyEventsSection: {
+  nearbySection: {
     paddingHorizontal: 20,
     marginBottom: 24,
   },
-  nearbyEventsScrollContent: {
+  nearbyScrollContent: {
     paddingRight: 20,
   },
-  nearbyEventCard: {
+  nearbyLocationCard: {
     width: 280,
     height: 180,
     marginRight: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#374151',
   },
-  eventImage: {
+  nearbyImageContainer: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
   },
-  nearbyEventGradient: {
-    flex: 1,
-    padding: 16,
-    justifyContent: 'flex-end',
+  nearbyImage: {
+    width: '100%',
+    height: '100%',
   },
-  nearbyEventContent: {
-    justifyContent: 'flex-end',
-  },
-  nearbyEventHeader: {
-    flexDirection: 'row',
+  nearbyPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: '#374151',
   },
-  nearbyEventTime: {
-    fontSize: 14,
-    color: '#f3f4f6',
-    marginLeft: 6,
-    fontWeight: '500',
+  nearbyGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
   },
-  nearbyEventTitle: {
+  nearbyName: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#f3f4f6',
-    marginBottom: 8,
+    color: '#fff',
+    marginBottom: 4,
   },
-  nearbyEventFooter: {
+  nearbyDetails: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  nearbyEventDistance: {
+  nearbyDistance: {
+    color: '#fff',
+    marginLeft: 4,
     fontSize: 14,
-    color: '#f3f4f6',
-    marginLeft: 6,
-    fontWeight: '500',
   },
 });
 

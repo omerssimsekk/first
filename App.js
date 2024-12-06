@@ -19,12 +19,33 @@ import EventsScreen from './src/screens/EventsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import LocationPickerScreen from './src/screens/LocationPickerScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
+import RestaurantScreen from './src/screens/RestaurantScreen';
+import BarScreen from './src/screens/BarScreen';
+import CafeScreen from './src/screens/CafeScreen';
+import ClubScreen from './src/screens/ClubScreen';
+import MeyhaneScreen from './src/screens/MeyhaneScreen';
+import LocalFoodScreen from './src/screens/LocalFoodScreen';
 
 // Theme
 import { theme } from './src/theme/theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const ExploreStack = createNativeStackNavigator();
+
+const ExploreStackNavigator = () => {
+  return (
+    <ExploreStack.Navigator screenOptions={{ headerShown: false }}>
+      <ExploreStack.Screen name="ExploreMain" component={ExploreScreen} />
+      <ExploreStack.Screen name="Restaurant" component={RestaurantScreen} />
+      <ExploreStack.Screen name="Bar" component={BarScreen} />
+      <ExploreStack.Screen name="Cafe" component={CafeScreen} />
+      <ExploreStack.Screen name="Club" component={ClubScreen} />
+      <ExploreStack.Screen name="Meyhane" component={MeyhaneScreen} />
+      <ExploreStack.Screen name="LocalFood" component={LocalFoodScreen} />
+    </ExploreStack.Navigator>
+  );
+};
 
 const MainTabNavigator = () => {
   return (
@@ -62,7 +83,7 @@ const MainTabNavigator = () => {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Explore" component={ExploreScreen} />
+      <Tab.Screen name="Explore" component={ExploreStackNavigator} />
       <Tab.Screen name="Locations" component={LocationsScreen} />
       <Tab.Screen name="Events" component={EventsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
@@ -86,6 +107,12 @@ export default function App() {
               <Stack.Screen name="LocationPicker" component={LocationPickerScreen} />
               <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
               <Stack.Screen name="Main" component={MainTabNavigator} />
+              <Stack.Screen name="Bar" component={BarScreen} />
+              <Stack.Screen name="Restaurant" component={RestaurantScreen} />
+              <Stack.Screen name="Cafe" component={CafeScreen} />
+              <Stack.Screen name="Club" component={ClubScreen} />
+              <Stack.Screen name="Meyhane" component={MeyhaneScreen} />
+              <Stack.Screen name="LocalFood" component={LocalFoodScreen} />
             </Stack.Navigator>
           </NavigationContainer>
         </LocationProvider>

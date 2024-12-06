@@ -174,6 +174,10 @@ const LocationsScreen = () => {
 
   const saveMarker = async (marker) => {
     try {
+      console.log('Saving marker with coordinates:', {
+        latitude: marker.latitude,
+        longitude: marker.longitude
+      });
       const newMarker = {
         id: Date.now().toString(),
         latitude: marker.latitude,
@@ -186,10 +190,13 @@ const LocationsScreen = () => {
         instagram: marker.instagram,
         operatingHours: marker.operatingHours,
         musicTypes: marker.musicTypes,
+        image: marker.image,
         timestamp: new Date().toISOString(),
       };
+
+      console.log('Saving marker with image:', newMarker.image ? 'Image exists' : 'No image');
+      
       const updatedMarkers = [...savedMarkers, newMarker];
-      console.log('Saving marker:', newMarker);
       await AsyncStorage.setItem(MARKERS_STORAGE_KEY, JSON.stringify(updatedMarkers));
       setSavedMarkers(updatedMarkers);
     } catch (error) {
@@ -208,20 +215,11 @@ const LocationsScreen = () => {
         };
         setRegion(cityRegion);
         mapRef.current?.animateToRegion(cityRegion, 1000);
-      } else if (currentLocation?.latitude && currentLocation?.longitude) {
-        const currentRegion = {
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        };
-        setRegion(currentRegion);
-        mapRef.current?.animateToRegion(currentRegion, 1000);
       }
     };
 
     initializeRegion();
-  }, [selectedCity, currentLocation]);
+  }, [selectedCity]);
 
   const handleLocationPress = () => {
     if (currentLocation?.latitude && currentLocation?.longitude) {
@@ -307,7 +305,8 @@ const LocationsScreen = () => {
               hasWifi: updatedInfo.hasWifi,
               instagram: updatedInfo.instagram,
               operatingHours: updatedInfo.operatingHours,
-              musicTypes: updatedInfo.category === 'bar' ? updatedInfo.musicTypes : undefined
+              musicTypes: updatedInfo.category === 'bar' ? updatedInfo.musicTypes : undefined,
+              image: updatedInfo.image
             }
           : marker
       );
@@ -444,6 +443,7 @@ const LocationsScreen = () => {
           instagram: tempMarker?.instagram || '',
           operatingHours: tempMarker?.operatingHours || { open: '', close: '' },
           musicTypes: tempMarker?.musicTypes || [],
+          image: tempMarker?.image || null,
         } : undefined}
       />
     </View>
